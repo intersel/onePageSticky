@@ -3,15 +3,22 @@
  * RCS PARIS 488 379 660 - NAF 721Z
  *
  * File : onepage-display.js
- * Object : affichage et gestion du one-page...
+ * Object : management of sticky onePage
  *
  * Modifications :
  * - 2013/10/13 - EPO - V1.0.0 - Creation
+ * - 2014/09/08 - EPO - V1.1.0 - Adaptation for Git publication
  *
- * @copyright : Intersel 2013
+ * @copyright : Intersel 2013-2014
  * @author : michael.petit@intersel.fr / emmanuel.podvin@intersel.fr
- * @version : V1.0.0
+ * @version : V1.1.0
+ * 
+ * Example of use
+ * 
+ * var aOnePageToDisplay =  new OnePageDisplay();
+ * aOnePageToDisplay.init();
  *
+ * if not defined, a loader is automatically inserted before the general container and has the class '.ajax-loader'
  */
 
 var OnePageDisplay = function ( options ) {
@@ -27,20 +34,19 @@ var OnePageDisplay = function ( options ) {
 	 * @param LogLevel				: 0: same as debug = false; 1: display errors; 2: errors+warning; 3: errors+warning+notice
 	 */
 	var $defaults = {
-		GeneralContainer	: '#wrap-site-content',
-		OnePageContainer	: 'section.onePage',
-		OnePageItems		: 'section.onePage > article, section.onePage > div > article, .onePage-item',
-		OnePageEnableMenus	: 'data-onepage="enabled"',
-		OnePageIdMenus		: 'data-onepage-id',
-		PrefixPageIdOnItem	: 'pageid_',
-		PageIdAttributeOnItem : 'data-pageid',
-		MessageToDisplayDuringLoad	: '', /*
+		GeneralContainer	: '#wrap-site-content', //general container where the pages are to be found
+		OnePageContainer	: 'section.onePage',	//the bloc container where are the pages
+		OnePageItems		: 'section.onePage > article, section.onePage div > article', //the bloc container of a page
+		PageIdAttributeOnItem : 'data-pageid',		// the attribute where to define the page id
+		OnePageIdMenus		: 'data-pageid',		//the attribute to find the page id in the menus
+		PrefixPageIdOnItem	: 'pageid_',			//if a prefix is used on the id of the page (ex: pageid_3)
+		MessageToDisplayDuringLoad	: '', /*		// a message to show during the display of the loader
 			'<div id="LoadingMessage">'
 				+"Pour une expérience utilisateur optimale<br>"
 						+"de notre site, utilisez un navigateur récent<br>"
 						+"tel que Chrome, Firefox ou IE10..."
 				+'</div>',*/
-		MaxDisplaysOfTheMessage : 3,
+		MaxDisplaysOfTheMessage : 3,				// number of times the message should be shown 
 		MW_MinHeightDetect	: 30,
 		MW_MaxHeightDetect	: 350,
 		LoaderDuration		: 300,
@@ -56,7 +62,7 @@ var OnePageDisplay = function ( options ) {
 	this.opts = jQuery.extend( {}, $defaults, options || {});
 
 	/*
-	 * @param {object} loader	- définition du loader OnePage
+	 * @param {object} loader	- OnePage loader
 	 */
 	this.loader = jQuery('<div/>', {
 		'id'	: 'OPLoader',
@@ -98,6 +104,8 @@ var OnePageDisplay = function ( options ) {
 	 */
 	this.currentPageUrl= '/';
 	
+// STATE MACHINE FUNCTIONS
+// -----------------------
 
 	/*
 	 * _initializeOnePage - initialise a OnePage
@@ -112,7 +120,7 @@ var OnePageDisplay = function ( options ) {
 	 */
 	var _initializeOnePage = function (param, event, data)
 	{
-		var thisOP = this.opts.OnePageObject;
+		var thisOP = this.opts.OnePageDisplayObject;
 		thisOP.log('_initializeOnePage');
 		
 		if ( (data != null) && (data.gotourl != null) )
@@ -124,10 +132,10 @@ var OnePageDisplay = function ( options ) {
 	}
 	// methode d'affichage du loader
 	var _showLoader = function () {
-		var thisOP = this.opts.OnePageObject;
+		var thisOP = this.opts.OnePageDisplayObject;
 		thisOP.log('_showLoader');
 
-		// si le loader n'est pas encore présent dans le contenu alors on l'insère
+		// if the loader not ther, we insert it
 		if ( !$('.ajax-loader').length )
 			$(thisOP.opts.GeneralContainer).before( thisOP.loader );
 		
@@ -152,7 +160,7 @@ var OnePageDisplay = function ( options ) {
 
 	// methode de masquage du loader
 	var _hideLoader = function () {
-		var thisOP = this.opts.OnePageObject;
+		var thisOP = this.opts.OnePageDisplayObject;
 		thisOP.log('_hideLoader');
 
 		$('.ajax-loader').stop().fadeOut( thisOP.opts.LoaderDuration );
@@ -189,7 +197,7 @@ var OnePageDisplay = function ( options ) {
 					function(param,event,delta) 
 					{
 						delta = (delta < 0)? -1:+1;
-						var aPageToStick = this.opts.OnePageObject.whoHasToBeSticked(delta);
+						var aPageToStick = this.opts.OnePageDisplayObject.whoHasToBeSticked(delta);
 						if (aPageToStick) 
 							this.trigger('OP_animate_sticky',aPageToStick);
 						this.trigger('OP_move_scroll');//some browser send the scroll event, other don't so always send one...
@@ -197,20 +205,20 @@ var OnePageDisplay = function ( options ) {
 				prevent_bubble : true,
 				out_function 	:  
 					function(){
-						if (Math.abs(this.opts.lastSticky - $(document).scrollTop()) > this.opts.OnePageObject.opts.MW_MaxHeightDetect) this.opts.lastSticky = -10000;
-						//this.opts.OnePageObject.log('OP_set_mousewheel : '+this.opts.lastSticky+'-'+$(document).scrollTop());
+						if (Math.abs(this.opts.lastSticky - $(document).scrollTop()) > this.opts.OnePageDisplayObject.opts.MW_MaxHeightDetect) this.opts.lastSticky = -10000;
+						//this.opts.OnePageDisplayObject.log('OP_set_mousewheel : '+this.opts.lastSticky+'-'+$(document).scrollTop());
 						this.returnStatus=false;//stop mousewheel bubbling
 					},
 				},
 			OP_animate_sticky:
 				{
 				//how_process_event 	: {delay:200},//help to  smooth the sticky
-				process_event_if	: "(Math.abs(this.opts.lastSticky - $(document).scrollTop()) > this.opts.OnePageObject.opts.MW_MaxHeightDetect)", 
+				process_event_if	: "(Math.abs(this.opts.lastSticky - $(document).scrollTop()) > this.opts.OnePageDisplayObject.opts.MW_MaxHeightDetect)", 
 				init_function		: 
 					function(param,event,aPageToStick) 
 					{
 						$(document).trigger('stop_listening_mousewheel');
-						this.opts.OnePageObject.animateStickyPage(aPageToStick);
+						this.opts.OnePageDisplayObject.animateStickyPage(aPageToStick);
 					},
 				next_state 			: 'StickyAnimation',
 				prevent_bubble 		: true,
@@ -253,7 +261,7 @@ var OnePageDisplay = function ( options ) {
 		{
 			OP_PageToGo:
 				{
-				init_function:function (param,event,page_id){this.opts.OnePageObject.scrollToPage(page_id);},
+				init_function:function (param,event,page_id){this.opts.OnePageDisplayObject.scrollToPage(page_id);},
 				prevent_bubble : true,
 				next_state		: 'setMenu',
 				},
@@ -355,7 +363,7 @@ var OnePageDisplay = function ( options ) {
 			OP_reinit_onepage	:
 			{
 				init_function		: _initializeOnePage,
-				next_state_when		: "this.opts.OnePageObject.testIfReady() == true",
+				next_state_when		: "this.opts.OnePageDisplayObject.testIfReady() == true",
 				next_state			: 'PageReadyAfterReinit',
 				propagate_event		: 'OP_is_page_ready',
 				prevent_bubble 		: true,
@@ -381,7 +389,7 @@ var OnePageDisplay = function ( options ) {
 			OP_test_page	:
 			{
 				next_state			: 'PageReady',
-				next_state_when		: "(this.opts.OnePageObject.testIfReady() == true)",
+				next_state_when		: "(this.opts.OnePageDisplayObject.testIfReady() == true)",
 				propagate_event		: 'OP_is_page_ready',
 				prevent_bubble 		: true,
 			},
@@ -436,16 +444,10 @@ var OnePageDisplay = function ( options ) {
 			{
 				init_function		: _hideLoader,
 			},
-/*			OP_test_ifonepage	:
-			{
-				next_state		: 'NotOnePage',
-				next_state_when	: "(this.opts.OnePageObject.getPageItems()!==false)", 
-			},
-*/
 			OP_new_page_loaded	:
 			{
-				process_event_if	:  "( 	($(this.opts.OnePageObject.opts.OnePageContainer).length != 0) "
-									 + "&& 	(this.opts.OnePageObject.getPageItems()!==false) )",
+				process_event_if	:  "( 	($(this.opts.OnePageDisplayObject.opts.OnePageContainer).length != 0) "
+									 + "&& 	(this.opts.OnePageDisplayObject.getPageItems()!==false) )",
 				next_state			: 'BecomeOnePage',
 				propagate_event_on_refused : 'OP_scroll_up_normalpage',//we scroll up the page as nobody do it...
 				propagate_event		: true,
@@ -489,7 +491,7 @@ var OnePageDisplay = function ( options ) {
 			{
 				how_process_event 	: {delay:30000},//
 				propagate_event	: 'OP_display_error_timeout',
-				out_function	: function(){$('.ajax-loader').append('<div style="margin:40px;color:red;font-weight:bold">Erreur Technique : Page non initialisée</div>');},
+				out_function	: function(){$('.ajax-loader').append('<div style="margin:40px;color:red;font-weight:bold">Technical error : Page not initialized</div>');},
 			},
 			OP_display_error_timeout :
 			{
@@ -498,21 +500,19 @@ var OnePageDisplay = function ( options ) {
 			},
 			Error_OnePageNotInitialized_NotOnePage :
 			{
-				next_state		: 'WaitForInitialisation',//pas un one page... on peut considérer qu'on est bon...
+				next_state		: 'WaitForInitialisation',//not a onePage
 			}
 		},
 		OnePageSet 			:
 		{
 			enterState			:
 			{
-				//propagate_event		: 'launch_AutomaticVerification',
 				init_function		: _hideLoader,
-				//out_function		: function(){$(document).trigger('OnePageReady')}// could be a event to trigger to others...?
 			},
 			OP_new_page_ready	:
 			{
 				init_function		: function(param,event,data){
-										this.trigger('OP_PageToGo', this.opts.OnePageObject.searchPageIdFromURL());
+										this.trigger('OP_PageToGo', 1);
 										},
 			},
 			delegate_machines :
@@ -589,7 +589,7 @@ var OnePageDisplay = function ( options ) {
 			AutomaticVerification	://if any change in the page was not managed //not launched for now
 			{
 				how_process_event 	: {delay:1000},
-				process_event_if	: "this.opts.OnePageObject.quickTestIfReady() == false", 
+				process_event_if	: "this.opts.OnePageDisplayObject.quickTestIfReady() == false", 
 				propagate_event 	: 'OP_ReinitOnePage',
 				propagate_event_on_refused : 'AutomaticVerification',
 			},
@@ -891,22 +891,20 @@ OnePageDisplay.prototype.init = function ()
 }
 
 /*
- * initEvents - methode permettant l'initialisation des événements pris en compte
+ * initEvents - initialises the state machines used to manage the one page
  */
 OnePageDisplay.prototype.initEvents = function ()
 {
 	var aFSMx;
 	this.log('initEvents');
 
-	var CurrentOnePageObject = this;//nécessaire pour pas qu'il se perde dans les limbes après...
-	aFSMx = new fsm_manager($(this.opts.GeneralContainer),this.OnePageFunctionStates,{OnePageObject:CurrentOnePageObject}); 
-	aFSMx.InitManager();
+	var CurrentOnePageDisplayObject = this;
+	$(this.opts.GeneralContainer).iFSM(this.OnePageFunctionStates,{OnePageDisplayObject:CurrentOnePageDisplayObject}); 
 
 	//get the onepage menu handlers set
-	aFSMx = new fsm_manager($(window),this.WindowEvent,{DelegateTo:this.opts.GeneralContainer,OnePageObject:CurrentOnePageObject});
-	aFSMx.InitManager();	
-	aFSMx = new fsm_manager($(document),this.DocumentEvent,{DelegateTo:this.opts.GeneralContainer,OnePageObject:CurrentOnePageObject});
-	aFSMx.InitManager();
+	$(window).iFSM(this.WindowEvent,{DelegateTo:this.opts.GeneralContainer,OnePageDisplayObject:CurrentOnePageDisplayObject});
+
+	$(document).iFSM(this.DocumentEvent,{DelegateTo:this.opts.GeneralContainer,OnePageDisplayObject:CurrentOnePageDisplayObject});
 }
 
 /*
@@ -941,8 +939,8 @@ OnePageDisplay.prototype.initializeOnePage = function ()
 	//first initialize the general variables of the onepage
 	if ( !this.initVariables() )
 	{
-		//c'est pas très bon ça! on n'arrive pas à initialiser...
-		this.log('On arrive pas à initialiser :-( est-ce vraiment une page onePage?',1);
+		//no good... don't succeed to initialise the onePage
+		this.log('Cant initialise... is it a onePage?',1);
 		$(this.opts.GeneralContainer).trigger( 'Error_OnePageNotInitialized', 'NotOnePage' );
 		return false;
 	}
