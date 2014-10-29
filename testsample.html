@@ -2,22 +2,43 @@
 <html>
 	<head>
 		<style>
-			#wrap-site-content article {width:100%;min-height:600px;};
+			body{padding:0px;margin:0px;}
+			#menu {
+				z-index:100;position: fixed;top:10px;
+			}
+			#wrap-site-content {margin-top:50px;width:100%;}
+			#wrap-site-content article {width:100%;min-height:400px;position:relative;}
+			.ajax-loader {
+				background-image: url("img/ajax-loader.gif");
+				background-repeat: no-repeat;
+				background-position: center 33%;
+				background-color: rgba(240, 240, 240, .84);
+				position: fixed;
+				z-index: 9999;
+				display:none;
+				}
 			
 		</style>
+		<!-- 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-		<script src="https://rawgit.com/intersel/iFSM/master/extlib/jquery.attrchange.js"></script>
-		<script src="https://rawgit.com/intersel/iFSM/master/extlib/jquery.dotimeout.js"></script>
-		<script src="https://rawgit.com/intersel/iFSM/master/iFSM.js"></script>
+		<script src="http://www.intersel.fr/assets/gitdemos/iFSM/extlib/jquery.attrchange.js"></script>
+		<script src="http://www.intersel.fr/assets/gitdemos/iFSM/extlib/jquery.dotimeout.js"></script>
+		<script src="http://www.intersel.fr/assets/gitdemos/iFSM/iFSM.js"></script>
+		-->
+		<script src="../ifsm/extlib/jquery-2.1.1.min.js"></script>
+		<script src="../ifsm/extlib/jquery.attrchange.js"></script>
+		<script src="../ifsm/extlib/jquery.dotimeout.js"></script>
+		<script src="../ifsm/iFSM.js"></script>
+
 		<script src="jquery.stickyplus.js"></script>
 		<script src="jquery.mousewheel.js"></script>
 		<script src="onepage-display.js"></script>
 	</head>
 	<body>
-		<div>
-			<button data-pageid="pageid_1">Goto Page 1</button>
-			<button data-pageid="pageid_2">Goto Page 2</button>
-			<button data-pageid="pageid_3">Goto Page 3</button>
+		<div id="menu" style="">
+			<button data-pageid="1">Goto Page 1</button>
+			<button data-pageid="2">Goto Page 2</button>
+			<button data-pageid="3">Goto Page 3</button>
 		</div>
 		<div id="wrap-site-content">
 			<section class="onePage" data-onepage="enabled">
@@ -36,9 +57,15 @@
 			</section>
 		</div>
 		<script>
-		 var aOnePageToDisplay =  new OnePageDisplay();
-		 aOnePageToDisplay.init();
-		 $(document).trigger('ajax-success-call');
+$(document).ready(function() {		
+	var aOnePageToDisplay =  new OnePageDisplay();
+	aOnePageToDisplay.init();
+	$(document).trigger('ajax-success-call');
+	
+	$("button").click(function(){
+		$(aOnePageToDisplay.opts.GeneralContainer).trigger("OP_PageToGo",$(this).attr("data-pageid"));		
+	});
+});
 		</script>
 	</body>
 </html>
